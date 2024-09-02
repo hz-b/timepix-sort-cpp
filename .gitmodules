@@ -1,0 +1,3 @@
+[submodule "external-repositories/mmap_allocator"]
+	path = external_repositories/mmap_allocator
+	url = https://github.com/johannesthoma/mmap_allocator.git
