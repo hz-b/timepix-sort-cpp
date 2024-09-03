@@ -5,12 +5,14 @@
 
 namespace timepix::sort::detail {
 
+    /* todo: calculate all in fs */
+    const uint64_t nanoseconds2femtoseconds = uint64_t(1000* 1000);
+    const uint64_t seconds2femtoseconds =  nanoseconds2femtoseconds * uint64_t(1000 * 1000 * 1000);
+
     /* time stamp in fs */
     static inline auto tdc_time_stamp(const uint64_t datum)
     {
 
-	/* todo: calculate all in fs */
-	const uint64_t s2fs = uint64_t(1000* 1000) * uint64_t(1000 * 1000 * 1000);
 	double time_of_arrival;
 	uint64_t coarsetime = (datum >> 9) & 0x1FFFFFFFF;
 	double coarsetimef = coarsetime * (1 / 320e6);
@@ -23,10 +25,10 @@ namespace timepix::sort::detail {
 	}
 
 	using timepix::data_model::TimeOfFlightEvent;
-	return TimeOfFlightEvent(uint64_t(time_of_arrival * s2fs));
+	return TimeOfFlightEvent(uint64_t(time_of_arrival * seconds2femtoseconds));
     }
 
-    static inline auto unfold_pixel_event(const uint64_t pkg){
+    static inline auto unfold_pixel_event(const uint64_t pkg, const int8_t chip_nr){
 
 	uint64_t spidrTime = pkg & 0xFFFF;
 	uint64_t dcol = (pkg & 0x0FE0000000000000) >> 52;  //# (pkg >> 52) & 0xfe;
@@ -62,7 +64,8 @@ namespace timepix::sort::detail {
 	spidrTime = spidrTime * 25 * 16384;
 
        // todo: float or int division ?
-	uint64_t TOA_s = spidrTime + CTOA * (25.0 / 16.0);
+	// uint64_t TOA_s = spidrTime + CTOA * (25.0 / 16.0);
+	double TOA_s = spidrTime + CTOA * (25.0 / 16.0);
 #if 0
 	if (chip_nr == 3) {
 // # correct for chip dependent TOT shift
@@ -74,8 +77,9 @@ namespace timepix::sort::detail {
 #endif
 	return timepix::data_model::PixelEvent(
 	    timepix::data_model::PixelPos(xx,yy),
-	    TOA_s,
-	    TOT
+	    uint64_t(TOA_s * nanoseconds2femtoseconds),
+	    TOT,
+	    chip_nr
 	    );
 
 //    if TOT > TOT_check and centerpixel != 0:

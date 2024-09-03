@@ -2,8 +2,12 @@
 #include <timepix_sort/process.h>
 #include <timepix_sort/detail/process_chunks.h>
 #include <timepix_sort/data_model.h>
+#include <timepix_sort/utils.h>
 #include <iostream>
 #include <cassert>
+#include <vector>
+#include <algorithm>
+
 
 /*
 enum TDC1TriggerMode{
@@ -77,7 +81,7 @@ tpxs::process(
 		break;
 	    case pixel:
 		n_pixels++;
-		events.push_back(std::move(tpxd::unfold_pixel_event(ev)));
+		events.push_back(std::move(tpxd::unfold_pixel_event(ev,  view.chip_nr())));
 		break;
 	    }
 	    n_events++;
@@ -93,4 +97,65 @@ tpxs::process(
 	      << std::endl;
 
     return events;
+}
+
+
+std::vector<size_t>
+tpxs::sort_indices(const dm::EventCollection& col)
+{
+    std::vector<uint64_t> timestamps(col.size());
+    std::transform(
+	col.begin(), col.end(), timestamps.begin(),
+	[](const auto &ev){ return ev.time_of_arrival(); }
+	);
+
+    return timepix::sort::detail::sort_indices(timestamps);
+}
+
+
+std::vector<dm::PixelEvent>
+tpxs::calculate_diff_time(const dm::EventCollection& col, const std::vector<size_t>& indices)
+{
+
+    std::vector<dm::PixelEvent> pixel_events_diff_time;
+    pixel_events_diff_time.reserve(col.size());
+
+    uint64_t stamp_of_last_trigger = -1;
+    bool have_found_trigger = false;
+
+    for(size_t i = 0; i<indices.size(); ++i){
+	const auto& ev = col[indices[i]];
+	if(ev.is_trigger_event()){
+	    if(have_found_trigger == false){
+		std::cerr << "Found first trigger for"
+			  << " i = " << i
+			  << " index " << indices[i]
+			  << " !" << std::endl;
+	    }
+	    have_found_trigger = true;
+	    stamp_of_last_trigger = ev.time_of_arrival();
+	    continue;
+	}
+	assert(ev.is_pixel_event());
+	if(have_found_trigger == false){
+	    // no trigger yet, ignore predated pixel events
+	    continue;
+	}
+	pixel_events_diff_time.push_back(ev.pixel_event_with_diff_time(stamp_of_last_trigger));
+    }
+
+    return pixel_events_diff_time;
+}
+
+
+void tpxs::sort_pixel_events(std::vector<dm::PixelEvent>& pixel_events)
+{
+
+    __gnu_parallel::sort(
+	pixel_events.begin(), pixel_events.end(),
+	[] (const auto& lhs, const auto& rhs) {
+	    return lhs.time_of_arrival() < rhs.time_of_arrival();
+	}
+	);
+
 }
