@@ -7,8 +7,8 @@
 namespace timepix::sort {
     std::vector<timepix::data_model::Event> process(
 	const timepix::data_model::ChunkCollection& collection,
-	int select_trigger_mode,
-	int tot_min
+	const int select_trigger_mode,
+	const uint64_t minimum_time_over_threshold
 	);
 
     std::vector<size_t> sort_indices(const timepix::data_model::EventCollection& col);

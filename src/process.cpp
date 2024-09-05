@@ -34,8 +34,8 @@ namespace dm = timepix::data_model;
 std::vector<timepix::data_model::Event>
 tpxs::process(
     const timepix::data_model::ChunkCollection& collection,
-    int select_trigger_mode,
-    int tot_min
+    const int select_trigger_mode,
+    const uint64_t minimum_time_over_threshold
     )
 {
 
@@ -81,7 +81,10 @@ tpxs::process(
 		break;
 	    case pixel:
 		n_pixels++;
-		events.push_back(std::move(tpxd::unfold_pixel_event(ev,  view.chip_nr())));
+		const auto pix_ev = tpxd::unfold_pixel_event(ev,  view.chip_nr());
+		if (pix_ev.time_over_threshold() >= minimum_time_over_threshold) {
+		    events.push_back(Event(std::move(pix_ev)));
+		}
 		break;
 	    }
 	    n_events++;
@@ -103,9 +106,10 @@ tpxs::process(
 std::vector<size_t>
 tpxs::sort_indices(const dm::EventCollection& col)
 {
-    std::vector<uint64_t> timestamps(col.size());
+    std::vector<uint64_t> timestamps;
+    timestamps.reserve(col.size());
     std::transform(
-	col.begin(), col.end(), timestamps.begin(),
+	col.begin(), col.end(), std::back_inserter(timestamps),
 	[](const auto &ev){ return ev.time_of_arrival(); }
 	);
 

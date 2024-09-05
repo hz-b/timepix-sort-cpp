@@ -41,3 +41,9 @@ target_link_libraries(main timepix-sort-test-c++ timepix-sort-c++ mmap_allocator
 
 add_executable(sort_test sort_test.cpp)
 target_link_libraries(sort_test timepix-sort-c++)
+
+
+add_executable(histogram histogram_test.cpp)
+target_link_libraries(histogram)
+
+add_executable(test_minmax test_minmax.cpp)

@@ -11,6 +11,8 @@ namespace timepix::data_model {
 
     class PixelPos{
     private:
+	///> pixel pos signed as I am not sure if pixels extend to
+	///> negative range in the end
 	int16_t m_x, m_y;
 
     public:
@@ -20,7 +22,7 @@ namespace timepix::data_model {
 	{}
 
 	inline auto x() const { return this->m_x; }
-	inline auto y() const { return this->m_x; }
+	inline auto y() const { return this->m_y; }
     };
 
 

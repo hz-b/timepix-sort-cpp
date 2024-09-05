@@ -7,6 +7,37 @@
 #include <cassert>
 #include <ranges>
 
+/*
+ *  6. Appendix: file formats
+ *
+ *  6.1 TPX3 raw file format
+ *  The .tpx3 raw data files contain the original data as sent by the readout board. It consists of chunks
+ *  with an 8 byte header prepended.
+ *  The chunk header consists of:
+ *      - 4 bytes indicating the type: “TPX3”;
+ *      - 1 byte indicating the chip index;
+ *      - 1 byte reserved;
+ *      - 2 bytes containing the net size of the chunk.
+ *  The chunk content consists of 8 byte words (little endian), the type of which is determined by the
+ *  most significant nibble (i.e. the high nibble of the last byte):
+ *      1. Pixel data with type 0xb, the maximum timestamp is 26.8435456 s;
+ *      2. TDC data with type 0x6, the maximum timestamp is 107.3741824 s;
+ *      3. Global time with type 0x4, the maximum is ~81 days;
+ *      4. Control indications with type 0x7.
+ *  The method how to decode this information from the raw data, please refer to the example code.
+ *
+ *  Table 6.1. TDC data packet
+ *
+ *    63 - 56 bit              55 - 44 bit     43 - 9 bit     8 - 5 bit      4 – 0 bit
+ *       0x6                Trigger counter   Timestamp       Stamp          Reserved
+ *
+ *  Table 6.2. Pixel data packet
+ *
+ *    63 - 60 bit              59 - 44 bit    43 - 30 bit    29 - 20 bit     19 – 16 bit       15 – 0 bit
+ *       0xb                    PixAddr          ToA            ToT            FToA           SPIDR time
+ *
+ *
+ */
 namespace timepix::data_model {
 
     // Todo: review name chunk: event basket

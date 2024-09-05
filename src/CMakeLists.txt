@@ -8,7 +8,9 @@ set(timepix_sort_cpp_HEADERS
   timepix_sort/utils.h
   timepix_sort/read.h
   timepix_sort/process.h
+  timepix_sort/events.h
   )
+
 set(timepix_sort_cpp_detail_HEADERS
   timepix_sort/detail/process_chunks.h
   )

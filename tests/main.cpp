@@ -8,8 +8,10 @@
 #include <timepix_sort/read.h>
 #include <timepix_sort/process.h>
 #include <timepix_sort/utils.h>
+#include <timepix_sort/events.h>
 
 namespace dm = timepix::data_model;
+namespace tps = timepix::sort;
 
 void usage(const char * progname)
 {
@@ -35,14 +37,14 @@ int main(int argc, char *argv[])
     const int rising_edge = 0x6E;
     // correct ?
     const int falling_edge = 0x6f;
-    auto events = timepix::sort::process(r, falling_edge, 6);
+    auto col = dm::EventCollection(timepix::sort::process(r, falling_edge, 6));
     const auto timestamp_process{now()};
-    std::cout << "Got " << events.size() << " timestamps\n";
+    std::cout << "Got " << col.size() << " timestamps\n";
 
     const auto timestamp_extract_start{now()};
-    std::vector<uint64_t> timestamps(events.size());
+    std::vector<uint64_t> timestamps(col.size());
     std::transform(
-	events.begin(), events.end(), timestamps.begin(),
+	col.begin(), col.end(), timestamps.begin(),
 	[](const auto &ev){ return ev.time_of_arrival(); }
 	);
 
@@ -55,59 +57,22 @@ int main(int argc, char *argv[])
 	      << std::endl;
 
     // check that the timestamps are sorted correctly.
-    auto old_timestamp = events[indices[0]].time_of_arrival();
+    auto old_timestamp = col[indices[0]].time_of_arrival();
     for(size_t i = 1; i < indices.size(); ++i){
-	const auto volatile t_timestamp = events[indices[i]].time_of_arrival();
+	const auto volatile t_timestamp = col[indices[i]].time_of_arrival();
 	assert(old_timestamp <= t_timestamp);
 	old_timestamp = t_timestamp;
     }
 
-    std::vector<dm::PixelEvent> pixel_events_diff_time;
-    // a little overcommitment here and there
-    pixel_events_diff_time.reserve(events.size());
-
-    // force some variables to be visible for the debugger
-    volatile uint64_t stamp_of_last_trigger = -1;
-    volatile bool have_found_trigger = false;
-    // no fancy indexing: need to use a transfrom that is sequential
-    for(volatile size_t i = 0; i<indices.size(); ){
-	i = i + 1;
-	const auto& ev = events[indices[i]];
-	if(ev.is_trigger_event()){
-	    if(have_found_trigger == false){
-		std::cerr << "Found first trigger for"
-			  << " i = " << i
-			  << " index " << indices[i]
-			  << " !" << std::endl;
-	    }
-	    have_found_trigger = true;
-	    stamp_of_last_trigger = ev.time_of_arrival();
-	    continue;
-	}
-	assert(ev.is_pixel_event());
-	if(have_found_trigger == false){
-	    // no trigger yet, ignore predated pixel events
-	    continue;
-	}
-	pixel_events_diff_time.push_back(ev.pixel_event_with_diff_time(stamp_of_last_trigger));
-    }
     const auto timestamp_diff_calc_end{now()};
-
-
-    std::vector<uint64_t> timestamps_diff(pixel_events_diff_time.size());
-    std::transform(
-	pixel_events_diff_time.begin(),
-	pixel_events_diff_time.end(),
-	timestamps_diff.begin(),
-	[](const auto &ev){ return ev.time_of_arrival(); }
+    auto pixel_diff_time = tps::PixelEventsDiffTime(
+	std::move(tps::calculate_diff_time(col, indices))
 	);
-
-
-    std::cerr << "sorting " <<
-	timestamps_diff.size()
+    pixel_diff_time.sort();
+    std::cerr << "sorting "
+	      << pixel_diff_time.size()
 	      << " pixel events by their diff time\n";
     const auto diff_timestamp_sort_start{now()};
-    const auto diff_indices = timepix::sort::detail::sort_indices(timestamps_diff);
     const auto diff_timestamp_sort_end{now()};
 
     //parallel::sort(timestamps.begin(), timestamps.end());
@@ -131,5 +96,39 @@ int main(int argc, char *argv[])
 	      << "\n\t sorting diff    " << for_diff_sort.count()
 	      << std::endl;
 
+
+    // create the histogram ... down here could explode the memory
+    // first decide how much axis to build
+
+    std::vector<dm::PixelPos> global_pixel_pos;
+    global_pixel_pos.reserve(pixel_diff_time.size());
+    std::transform(pixel_diff_time.begin(), pixel_diff_time.end(), std::back_inserter(global_pixel_pos),
+		   [](const dm::PixelEvent&ev){
+		       return tps::map_pixel_and_chip_nr_to_global_pixel(ev.pos(), ev.chip_nr());
+		   }
+	);
+
+    auto x_larger = [](const dm::PixelPos& lhs, const dm::PixelPos& rhs){
+	return lhs.x() < rhs.x();
+    };
+    auto y_larger = [](const dm::PixelPos& lhs, const dm::PixelPos& rhs){
+	return lhs.y() < rhs.y();
+    };
+
+    auto larger = [](const int& lhs, const int& rhs){
+	return lhs < rhs;
+    };
+
+
+    std::cout << " event 'volumne' "
+	      << "\n\t x "     <<  std::min_element(global_pixel_pos.begin(), global_pixel_pos.end(), x_larger)->x()
+	      << " .. "        <<  std::max_element(global_pixel_pos.begin(), global_pixel_pos.end(), x_larger)->x()
+	      << "\n\t y "     <<  std::min_element(global_pixel_pos.begin(), global_pixel_pos.end(), y_larger)->y()
+	      << " .. "        <<  std::max_element(global_pixel_pos.begin(), global_pixel_pos.end(), y_larger)->y()
+	      << "\n\t time " << pixel_diff_time[0].time_of_arrival()
+	      << " ..       " << pixel_diff_time.at(pixel_diff_time.size() - 1).time_of_arrival()
+	      << std::endl;
+
+    return 0;
 
 }
