@@ -114,13 +114,13 @@ tpxs::process(
 
 
 std::vector<size_t>
-tpxs::sort_indices(const dm::EventCollection& col)
+tpxs::sort_indices(const dm::EventCollection& col, const uint64_t modulo)
 {
     std::vector<uint64_t> timestamps;
     timestamps.reserve(col.size());
     std::transform(
 	col.begin(), col.end(), std::back_inserter(timestamps),
-	[](const auto &ev){ return ev.time_of_arrival(); }
+	[&modulo](const auto &ev){ return (ev.time_of_arrival() % modulo); }
 	);
 
     return timepix::sort::detail::sort_indices(timestamps);
@@ -128,7 +128,7 @@ tpxs::sort_indices(const dm::EventCollection& col)
 
 
 std::vector<dm::PixelEvent>
-tpxs::calculate_diff_time(const dm::EventCollection& col, const std::vector<size_t>& indices)
+tpxs::calculate_diff_time(const dm::EventCollection& col, const std::vector<size_t>& indices, const uint64_t modulo)
 {
 
     std::vector<dm::PixelEvent> pixel_events_diff_time;
@@ -147,7 +147,8 @@ tpxs::calculate_diff_time(const dm::EventCollection& col, const std::vector<size
 			  << " !" << std::endl;
 	    }
 	    have_found_trigger = true;
-	    stamp_of_last_trigger = ev.time_of_arrival();
+	    // again ... allow to only use the subset of the pixel range
+	    stamp_of_last_trigger = ev.time_of_arrival() % modulo;
 	    continue;
 	}
 	assert(ev.is_pixel_event());

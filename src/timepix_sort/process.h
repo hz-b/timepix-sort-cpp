@@ -13,10 +13,10 @@ namespace timepix::sort {
 	const uint64_t minimum_time_over_threshold
 	);
 
-    std::vector<size_t> sort_indices(const timepix::data_model::EventCollection& col);
+    std::vector<size_t> sort_indices(const timepix::data_model::EventCollection& col, const uint64_t modulo);
 
     std::vector<timepix::data_model::PixelEvent>
-	calculate_diff_time(const timepix::data_model::EventCollection& col, const std::vector<size_t>& indices);
+	calculate_diff_time(const timepix::data_model::EventCollection& col, const std::vector<size_t>& indices, const uint64_t modulo);
 
     /**
      * @warning: in place operation!
@@ -27,7 +27,8 @@ namespace timepix::sort {
     std::vector<timepix::data_model::PixelEvent>
 	calculate_diff_time_sorted(
 	    const timepix::data_model::EventCollection& col,
-	    const std::vector<size_t>& indices
+	    const std::vector<size_t>& indices,
+	     const uint64_t modulo
 	    );
 
 
