@@ -1,5 +1,6 @@
 #include <chrono>
 #include <iostream>
+#include <iomanip>
 #include <stdint.h>
 #include <memory>
 //#include <parallel/algorithm>
@@ -33,7 +34,7 @@ static void usage(const char * progname)
 int main(int argc, char *argv[])
 {
 
-    basis_size();
+    //basis_size();
     if(argc != 2){
 	usage(argv[0]);
     }
@@ -42,6 +43,7 @@ int main(int argc, char *argv[])
     const auto buffer = timepix::sort::detail::read_raw(std::string(argv[1]));
     const auto timestamp_start{now()};
     auto r = timepix::sort::read_chunks(buffer);
+    timepix::data_model::ChunkCollection r2 = r;
     const auto timestamp_read{now()};
 
     const int rising_edge = 0x6E;
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
     std::cout << "Got " << col.size() << " timestamps\n";
 
     const auto timestamp_extract_start{now()};
-    std::vector<uint64_t> timestamps(col.size());
+    std::vector<double> timestamps(col.size());
     std::transform(
 	col.begin(), col.end(), timestamps.begin(),
 	[](const auto &ev){ return ev.time_of_arrival(); }
@@ -70,14 +72,18 @@ int main(int argc, char *argv[])
 	;
 
     std::cerr << "pixels time range: "
+	      << std::setprecision(15)
 	      << *std::ranges::min_element(pixel_timestamps.begin(), pixel_timestamps.end())
 	      << " .. "
+	      << std::setprecision(15)
 	      << *std::ranges::max_element(pixel_timestamps.begin(), pixel_timestamps.end())
 	      << std::endl ;
 
     std::cerr << "trigger time range: "
+	      << std::setprecision(15)
 	      << *std::ranges::min_element(trigger_timestamps.begin(), trigger_timestamps.end())
 	      << " .. "
+	      << std::setprecision(15)
 	      << *std::ranges::max_element(trigger_timestamps.begin(), trigger_timestamps.end())
 	      << std::endl ;
 

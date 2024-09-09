@@ -7,77 +7,59 @@ namespace timepix::sort::detail {
 
     /* todo: calculate all in fs */
     const uint64_t nanoseconds2femtoseconds = uint64_t(1000* 1000);
+    const uint64_t seconds2nanoseconds = uint64_t(1000 * 1000 * 1000);
     const uint64_t seconds2femtoseconds =  nanoseconds2femtoseconds * uint64_t(1000 * 1000 * 1000);
+    const double time_unit = 25. / 4096;
 
+    const double pixel_max_time = 26.8435456;
+    const double tdc_max_time = 107.3741824;
+
+    static inline auto convert_time(const double time_stamp, const double max_time, const double eps = 1e-9)
+    {
+	if(time_stamp < eps){
+	    throw std::range_error("timestamp too small!");
+	}
+
+	if(time_stamp > max_time + eps){
+	    throw std::range_error("timestamp larger than max_time");
+	}
+	return time_stamp;
+    }
     /* time stamp in fs */
     static inline auto tdc_time_stamp(const uint64_t datum)
     {
 
-	double time_of_arrival;
-	uint64_t coarsetime = (datum >> 9) & 0x1FFFFFFFF;
-	double coarsetimef = coarsetime * (1 / 320e6);
-	uint64_t tmpfine = (datum >> 5) & 0xF;
-
-	if(tmpfine > 0){
-	    time_of_arrival = coarsetimef + (tmpfine - 1) * 260e-12;
-	} else {
-	    throw std::runtime_error("TDC timestamp unknown!");
-	}
+	double coarsetime = (datum >> 12) & 0xFFFFFFFF;
+	unsigned long tmpfine = (datum >> 5) & 0xF;
+	tmpfine = ((tmpfine - 1) << 9) / 12;
+	unsigned long trigtime_fine = (datum & 0x0000000000000E00) | (tmpfine & 0x00000000000001FF);
+	double TDC_timestamp = coarsetime * 25.0 + trigtime_fine * time_unit*1.0;
 
 	using timepix::data_model::TimeOfFlightEvent;
-	return TimeOfFlightEvent(uint64_t(time_of_arrival * seconds2femtoseconds));
+	return TimeOfFlightEvent(convert_time(TDC_timestamp, tdc_max_time * 1e9));
     }
 
-    static inline auto unfold_pixel_event(const uint64_t pkg, const int8_t chip_nr){
+    static inline auto unfold_pixel_event(const uint64_t datum, const int8_t chip_nr){
 
-	uint64_t spidrTime = pkg & 0xFFFF;
-	uint64_t dcol = (pkg & 0x0FE0000000000000) >> 52;  //# (pkg >> 52) & 0xfe;
-	uint64_t spix = (pkg & 0x001F800000000000) >> 45;  //# (pkg >> 45) & 0x1f8; //
-	uint64_t pix = (pkg & 0x0000700000000000) >> 44;  //# (pkg >> 44) & 0x7 //
+	unsigned short spidrTime = (unsigned short)(datum & 0xffff);
+	long  dcol = (datum & 0x0FE0000000000000L) >> 52;
+	long  spix = (datum & 0x001F800000000000L) >> 45;
+	long  pix = (datum & 0x0000700000000000L) >> 44;
+	int x = (int)(dcol + pix / 4);
+	int y = (int)(spix + (pix & 0x3));
+	unsigned short TOA = (unsigned short)((datum >> (16 + 14)) & 0x3fff);
+	unsigned short TOT = (unsigned short)((datum >> (16 + 4)) & 0x3ff);
+	///> todo: check cast from unsigned char to char
+	char FTOA = (unsigned char)((datum >> 16) & 0xf);
+	int CTOA = (TOA << 4) | (~FTOA & 0xf);
+	double spidrTimens = spidrTime * 25.0 * 16384.0;
+	double            TOAns = TOA * 25.0;
+	double TOTns = TOT * 25.0;
+	double global_timestamp = spidrTimens + CTOA * (25.0 / 16.0);
 
-	int xx = dcol + pix / 4;
-	int yy = spix + (pix & 0x3);
-// time of arrival
-	uint64_t TOA = (pkg >> (16 + 14)) & 0x3FFF;
-// time over threshold
-	uint64_t TOT = (pkg >> (16 + 4)) & 0x3FF;
-	// fine time of arrival
-	uint64_t FTOA = (pkg >> 16) & 0xF;
-	// coarse time of arrival ?
-	uint64_t CTOA = (TOA << 4) | (~FTOA & 0xF);
-	// time over treshshold
-
-	if (xx > 193 && xx < 204) {  // "Tram line" correction
-		CTOA -= 8;
-	} else {
-	    CTOA += 8;
-	}
-
-	/*
-    if xx in [0, 255] or yy in [0, 255]:
-        # mark every 3rd count at edge to equalize intensity
-        centerpixel = index % 3
-    else:
-        centerpixel = 1
-	*/
-
-	spidrTime = spidrTime * 25 * 16384;
-
-       // todo: float or int division ?
-	// uint64_t TOA_s = spidrTime + CTOA * (25.0 / 16.0);
-	double TOA_s = spidrTime + CTOA * (25.0 / 16.0);
-#if 0
-	if (chip_nr == 3) {
-// # correct for chip dependent TOT shift
-	    TOT_check = TOT_min - 1;
-	} else {
-	    TOT_check = TOT_min;
-	}
-
-#endif
 	return timepix::data_model::PixelEvent(
-	    timepix::data_model::PixelPos(xx,yy),
-	    uint64_t(TOA_s * nanoseconds2femtoseconds),
+	    timepix::data_model::PixelPos(x, y),
+	    convert_time(global_timestamp, pixel_max_time * 1e9),
 	    TOT,
 	    chip_nr
 	    );

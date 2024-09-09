@@ -29,7 +29,7 @@ namespace timepix::data_model {
     template<class D>
     struct HasTimeOfArrival
     {
-	inline const int64_t time_of_arrival() const {
+	inline const auto time_of_arrival() const {
 	    return static_cast<const D*>(this)->time_of_arrival_impl();
 	}
 	void show(std::ostream& o) const {
@@ -48,17 +48,18 @@ namespace timepix::data_model {
      */
     class TimeOfFlightEvent : public HasTimeOfArrival<TimeOfFlightEvent>{
     private:
-	const uint64_t m_time_of_arrival;
+	// const uint64_t m_time_of_arrival;
+	// double m_time_of_arrival;
 
     public:
 
-	TimeOfFlightEvent(uint64_t time_of_arrival)
+	TimeOfFlightEvent(const double time_of_arrival)
 	    : m_time_of_arrival(time_of_arrival)
 	    {}
 
 	const TimeOfFlightEvent& clone() const { return *this; }
 
-	inline const uint64_t time_of_arrival_impl() const {
+	inline const auto time_of_arrival_impl() const {
 	    return this->m_time_of_arrival;
 	}
 	void show_impl(std::ostream& o) const {
@@ -74,13 +75,14 @@ namespace timepix::data_model {
      */
     class PixelEvent : public HasTimeOfArrival<PixelEvent>{
     private:
-	uint64_t m_time_of_arrival;
+	// uint64_t m_time_of_arrival;
+	double m_time_of_arrival;
 	uint64_t m_time_over_threshold;
 	PixelPos m_pos;
 	int8_t m_chip_nr;
 
     public:
-	inline PixelEvent(const PixelPos& pos, const int64_t time_of_arrival, const int64_t time_over_threshold, int8_t chip_nr)
+	inline PixelEvent(const PixelPos& pos, const double time_of_arrival, const int64_t time_over_threshold, int8_t chip_nr)
 	    : m_time_of_arrival(time_of_arrival)
 	    , m_time_over_threshold(time_over_threshold)
 	    , m_pos(pos)
@@ -94,7 +96,7 @@ namespace timepix::data_model {
 	inline auto pos()                 const { return this->m_pos;                 }
 	inline auto chip_nr()             const { return this->m_chip_nr;             }
 
-	inline const uint64_t time_of_arrival_impl() const {
+	inline const auto time_of_arrival_impl() const {
 	    return this->m_time_of_arrival;
 	}
 
@@ -159,8 +161,8 @@ namespace timepix::data_model {
 		}, this->m_event);
 	}
 
-	inline uint64_t time_of_arrival () const {
-	    uint64_t t;
+	inline auto time_of_arrival () const {
+	    double t;
 	    std::visit(overloaded{
 		    [&t] (const PixelEvent& ev){
 			t = ev.time_of_arrival();

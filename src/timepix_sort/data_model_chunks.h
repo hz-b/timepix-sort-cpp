@@ -81,6 +81,7 @@ namespace timepix::data_model {
 
 	inline ChunkView operator[](const size_t index) const;
 	inline ChunkView at(const size_t index) const;
+	ChunkView at_dbg(const size_t index) const;
     };
 
 
