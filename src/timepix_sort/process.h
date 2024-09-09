@@ -3,9 +3,11 @@
 
 #include <timepix_sort/data_model_chunks.h>
 #include <timepix_sort/data_model.h>
+#include <timepix_sort/event_statistics.h>
 
 namespace timepix::sort {
-    std::vector<timepix::data_model::Event> process(
+    std::pair<std::vector<timepix::data_model::Event>,timepix::data_model::EventStatistics>
+	process(
 	const timepix::data_model::ChunkCollection& collection,
 	const int select_trigger_mode,
 	const uint64_t minimum_time_over_threshold

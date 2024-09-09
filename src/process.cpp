@@ -3,10 +3,12 @@
 #include <timepix_sort/detail/process_chunks.h>
 #include <timepix_sort/data_model.h>
 #include <timepix_sort/utils.h>
-#include <iostream>
-#include <cassert>
-#include <vector>
 #include <algorithm>
+#include <cassert>
+#include <ios>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 
 /*
@@ -23,7 +25,9 @@ enum TDC2TriggerMode{
 
 enum TDCEventType{
     timestamp = 0x6,
-    pixel = 0xb
+    pixel = 0xb,
+    global_time = 0x4,
+    control_indication = 0x7,
 };
 
 namespace tpxs = timepix::sort;
@@ -31,7 +35,9 @@ namespace tpxd = timepix::sort::detail;
 namespace dm = timepix::data_model;
 
 
-std::vector<timepix::data_model::Event>
+
+
+std::pair<std::vector<timepix::data_model::Event>,dm::EventStatistics>
 tpxs::process(
     const timepix::data_model::ChunkCollection& collection,
     const int select_trigger_mode,
@@ -39,19 +45,18 @@ tpxs::process(
     )
 {
 
-    uint64_t n_events=0, n_pixels=0, n_timestamps=0,  n_timestamps_with_trigger=0;
     using timepix::data_model::Event;
+    dm::EventStatistics ev_stat;
     std::vector<Event> events;
 
-    n_events=0;
     for(size_t i=0; i < collection.size(); ++i){
-	n_events += collection.get(i).n_events();
+	ev_stat.inc_n_events();
     }
 
     // find out how much memory ... allow for over comittment
-    events.reserve(n_events);
+    events.reserve(ev_stat.n_events());
+    ev_stat.reset_n_events();
 
-    n_events=0;
     for(size_t i=0; i < collection.size(); ++i){
 	const auto& view = collection.get(i);
 	const auto& raw_events = view.events();
@@ -68,38 +73,43 @@ tpxs::process(
 #endif
 
 	for(const uint64_t ev : raw_events){
-	    int event_type = (ev >> 60) & 0xf;
+	    int event_type = (ev >> 60);
 	    int trigger_mode = ev >> 56;
-
+	    ev_stat.inc_n_events();
 	    switch(event_type){
 	    case timestamp:
-		n_timestamps++;
-		if (select_trigger_mode == trigger_mode){
+		ev_stat.inc_n_timestamps();
+		if (select_trigger_mode == trigger_mode) {
 		    events.push_back(std::move(tpxd::tdc_time_stamp(ev)));
-		    n_timestamps_with_trigger++;
+		    ev_stat.inc_n_timestamps_with_trigger();
 		}
 		break;
 	    case pixel:
-		n_pixels++;
+	    { // Why do I need this brackets ?
+		ev_stat.inc_n_pixels();
 		const auto pix_ev = tpxd::unfold_pixel_event(ev,  view.chip_nr());
 		if (pix_ev.time_over_threshold() >= minimum_time_over_threshold) {
 		    events.push_back(Event(std::move(pix_ev)));
 		}
+	    } //
+	    break;
+	    case global_time:
+		ev_stat.inc_n_global_time();
 		break;
+	    case control_indication:
+		ev_stat.inc_n_control_indications();
+		break;
+	    case 0xf:
+		break;
+	    default:
+		std::stringstream strm;
+		strm << "Found unknown event data type " << std::hex << event_type
+		     << " in data";
+		throw std::invalid_argument(strm.str());
 	    }
-	    n_events++;
 	}
     }
-    std::cout << "procssed " << collection.size() << " chunks"
-	      << " containing"
-	      << "\n\t events" << n_events
-	      << "\n\t pixels " << n_pixels
-	      << "\n\t timestamps " << n_timestamps
-	      << "\n\t timestamps with incorrect trigger (edge)" << n_timestamps - n_timestamps_with_trigger
-	      << "\n\t remaining " << int64_t(n_events) - int64_t(n_pixels + n_timestamps)
-	      << std::endl;
-
-    return events;
+    return std::make_pair(std::move(events), std::move(ev_stat));
 }
 
 

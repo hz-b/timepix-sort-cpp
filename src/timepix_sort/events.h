@@ -5,6 +5,7 @@
 #include <timepix_sort/process.h>
 
 namespace timepix::sort {
+
     class PixelEventsDiffTime
     {
     protected:
@@ -40,23 +41,6 @@ namespace timepix::sort {
 	    sort_pixel_events(this->m_pixel_events);
 	    this->m_is_sorted = true;
 	    // return *this;
-	}
-
-	void inline fill_buffer_with_time_of_arrival(uint64_t *vec, size_t n) const {
-	    if(n>this->m_pixel_events.size()){
-		throw std::range_error("requested buffer size too large!");
-	    }
-	    for(size_t i=0; i<n; ++i){
-		vec[i] = this->m_pixel_events[i].time_of_arrival();
-	    }
-	}
-	void inline fill_buffer_with_time_over_threshold(uint64_t *vec, size_t n) const {
-	    if(n>this->m_pixel_events.size()){
-		throw std::range_error("requested buffer size too large!");
-	    }
-	    for(size_t i=0; i<n; ++i){
-		vec[i] = this->m_pixel_events[i].time_over_threshold();
-	    }
 	}
 
     };

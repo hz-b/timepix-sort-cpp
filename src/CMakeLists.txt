@@ -5,6 +5,7 @@ set(timepix_sort_cpp_HEADERS
   timepix_sort/timepix_sort.h
   timepix_sort/data_model.h
   timepix_sort/data_model_chunks.h
+  timepix_sort/event_statistics.h
   timepix_sort/utils.h
   timepix_sort/read.h
   timepix_sort/process.h
@@ -26,6 +27,7 @@ install(FILES ${timepix_sort_cpp_HEADERS}
 
 set(timepix_sort_cpp_FILES
   data_model.cpp
+  event_statistics.cpp
   read.cpp
   process.cpp
   )

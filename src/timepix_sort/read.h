@@ -9,7 +9,7 @@ namespace timepix::sort {
     timepix::data_model::ChunkCollection
 	read_chunks(std::shared_ptr<const std::vector<uint64_t>> buffer);
 
-    std::tuple<uint8_t, int> process_header(const int64_t datum);
+    std::tuple<uint8_t, uint64_t, uint8_t> process_header(const uint64_t datum);
 
     namespace detail {
 	// todo: move to separate header

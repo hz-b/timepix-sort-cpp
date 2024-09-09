@@ -4,6 +4,7 @@
 #include <memory>
 //#include <parallel/algorithm>
 #include <algorithm>
+#include <ranges>
 
 #include <timepix_sort/read.h>
 #include <timepix_sort/process.h>
@@ -13,7 +14,16 @@
 namespace dm = timepix::data_model;
 namespace tps = timepix::sort;
 
-void usage(const char * progname)
+
+static void basis_size(void){
+    std::cout
+	<< "\nunsigned long long " << sizeof( unsigned long long ) << "\t uint64_t " << sizeof(uint64_t)
+	<< "\nunsigned short     " << sizeof( unsigned short     ) << "\t uint16_t " << sizeof(uint16_t)
+	<< "\nint                " << sizeof( int                ) << "\t  int32_t " << sizeof(uint32_t)
+	<< "\nchar               " << sizeof( char               ) << "\t   int8_t " << sizeof(uint8_t)
+	<< std::endl;
+}
+static void usage(const char * progname)
 {
     std::cout << "Usage " << progname << " file_to_read "   << std::endl;
     exit(1);
@@ -23,10 +33,10 @@ void usage(const char * progname)
 int main(int argc, char *argv[])
 {
 
+    basis_size();
     if(argc != 2){
 	usage(argv[0]);
     }
-
     auto now = std::chrono::steady_clock::now;
 
     const auto buffer = timepix::sort::detail::read_raw(std::string(argv[1]));
@@ -37,7 +47,9 @@ int main(int argc, char *argv[])
     const int rising_edge = 0x6E;
     // correct ?
     const int falling_edge = 0x6f;
-    auto col = dm::EventCollection(timepix::sort::process(r, falling_edge, 6));
+    auto tmp = timepix::sort::process(r, falling_edge, 6);
+    std::cout << "data contained " << std::get<dm::EventStatistics>(tmp);
+    auto col = dm::EventCollection(std::move(std::get<std::vector<dm::Event>>(tmp)));
     const auto timestamp_process{now()};
     std::cout << "Got " << col.size() << " timestamps\n";
 
@@ -47,6 +59,27 @@ int main(int argc, char *argv[])
 	col.begin(), col.end(), timestamps.begin(),
 	[](const auto &ev){ return ev.time_of_arrival(); }
 	);
+
+    auto pixel_timestamps = col |					\
+	std::views::filter([](const dm::Event &ev){ return ev.is_pixel_event();}) |
+	std::views::transform([](const dm::Event &ev){ return ev.time_of_arrival();})
+	;
+    auto trigger_timestamps = col |					\
+	std::views::filter([](const dm::Event &ev){ return ev.is_trigger_event();}) |
+	std::views::transform([](const dm::Event &ev){ return ev.time_of_arrival();})
+	;
+
+    std::cerr << "pixels time range: "
+	      << *std::ranges::min_element(pixel_timestamps.begin(), pixel_timestamps.end())
+	      << " .. "
+	      << *std::ranges::max_element(pixel_timestamps.begin(), pixel_timestamps.end())
+	      << std::endl ;
+
+    std::cerr << "trigger time range: "
+	      << *std::ranges::min_element(trigger_timestamps.begin(), trigger_timestamps.end())
+	      << " .. "
+	      << *std::ranges::max_element(trigger_timestamps.begin(), trigger_timestamps.end())
+	      << std::endl ;
 
     // indices to the events in sorted manner
     const auto timestamp_sort_start{now()};

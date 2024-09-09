@@ -76,10 +76,11 @@ namespace timepix::data_model {
 	    , m_chunk_addresses(chunk_addresses)
 	{}
 	inline ChunkView get(const size_t index) const ;
+	inline ChunkView get_checked(const size_t index) const ;
 	inline size_t size() const { return this->m_chunk_addresses.size(); }
 
 	inline ChunkView operator[](const size_t index) const;
-
+	inline ChunkView at(const size_t index) const;
     };
 
 
@@ -112,9 +113,16 @@ namespace timepix::data_model {
     inline ChunkView ChunkCollection::get(size_t index) const {
 	return ChunkView(this->m_buffer, this->m_chunk_addresses.at(index));
     }
+    inline ChunkView ChunkCollection::get_checked(size_t index) const {
+	return ChunkView(this->m_buffer, this->m_chunk_addresses.at(index));
+    }
 
     inline ChunkView ChunkCollection::operator[](const size_t index) const {
 	return this->get(index);
+    }
+
+    inline ChunkView ChunkCollection::at(const size_t index) const {
+	return this->get_checked(index);
     }
 
 

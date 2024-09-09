@@ -37,6 +37,11 @@ namespace timepix::data_model {
 	}
     };
 
+    struct GlobalTimeStamps
+    {
+	unsigned long timer_msb16 = 0;
+
+    };
 
     /**
      * @todo investigate assignment operators

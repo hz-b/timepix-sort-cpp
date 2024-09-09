@@ -14,7 +14,7 @@ std::shared_ptr<std::vector<uint64_t>> tpxd::read_raw(std::string filename)
     const auto size = std::filesystem::file_size(p);
 
     //std::cout << "treating file " << p.u8string()
-//	      << " with size " << size << "\n";
+//	const      << " with size " << size << "\n";
 
     using namespace mmap_allocator_namespace;
     mmappable_vector<uint64_t> read_buffer;
@@ -23,6 +23,7 @@ std::shared_ptr<std::vector<uint64_t>> tpxd::read_raw(std::string filename)
     read_buffer.mmap_file(filename, READ_ONLY, 0, size);
     const auto timestamp_mapped{std::chrono::steady_clock::now()};
 
+    assert(read_buffer.size() % 8 ==0);
     const auto buffer = std::make_shared<std::vector<uint64_t>>(read_buffer.begin(), read_buffer.begin() +  read_buffer.size() / 8);
     const auto timestamp_vector{std::chrono::steady_clock::now()};
 
