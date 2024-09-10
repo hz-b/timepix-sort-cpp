@@ -32,8 +32,10 @@ jobs:
     - name: checkout repository
       uses: actions/checkout@v4
       # need the memory map
-      submodules: true
-      # don't forget to apply the patch to memory allocator
+      submodules: 'true'
+
+    - name: apply patch to mmap allocator
+      # 
       run: (cd external_repositories/mmap_allocator/ && patch -p1 --dry-run -R < ../../mmap_allocator.patch)
       
     - name: Set reusable strings
