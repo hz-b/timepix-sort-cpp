@@ -28,11 +28,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libboost-test-dev libboost-program-options-dev libboost-dev patch
-    - name: checkout test data repository
-      uses: actions/checkout@v4
-      with:
-          repository: hz-b/timepix-sort-data
-          path: timepix-sort-data
 
     - name: checkout repository
       uses: actions/checkout@v4
@@ -47,6 +42,15 @@ jobs:
         # check that the applied patch made the required change
         sed '39!d' external_repositories/mmap_allocator/mmap_allocator.h
 
+    - name: checkout test data repository
+      # seems to be done after the main repository was checked out
+      # the step checkout repository seems to delete all
+      uses: actions/checkout@v4
+      with:
+          repository: hz-b/timepix-sort-data
+          path: timepix-sort-data
+          ref: main
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -54,7 +58,7 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         echo "current directory:" `pwd`
-        
+
         TPX3_TEST_DATA=`pwd`/../../timepix-sort-data/data/Co_pos_0000.tpx3
         echo "tpx3-test-data=$TPX3_TEST_DATA" >> "$GITHUB_OUTPUT"
         find ../.. -type f
