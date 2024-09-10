@@ -48,7 +48,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        TPX3_TEST_DATA=`pwd`/timepix-sort-data/data/Co_pos_0000.tpx3
+        TPX3_TEST_DATA=(cd .. && echo `pwd`/timepix-sort-data/data/Co_pos_0000.tpx3)
         echo "tpx3-test-data=$TPX3_TEST_DATA" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
@@ -73,5 +73,5 @@ jobs:
         export TPX3_TEST_DATA=${{ steps.strings.outputs.tpx3-test-data }}
         echo "using test data $TPX3_TEST_DATA"
         echo "current directory:" `pwd`
-        find . -name '*.tpx3'
+        find .. -name '*.tpx3'
         ctest --build-config ${{ matrix.build_type }}  --output-on-failure
