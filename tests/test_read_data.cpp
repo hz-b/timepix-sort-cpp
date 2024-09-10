@@ -1,9 +1,10 @@
-#define BOOST_TEST_MODULE gtpsa_arithmetic
+#define BOOST_TEST_MODULE TPX3_READ_DATA
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/output_test_stream.hpp>
 #include <string>
+#include <iostream>
 #include <timepix_sort/read.h>
 #include <timepix_sort/process.h>
 #include <timepix_sort/data_model.h>
@@ -19,7 +20,14 @@ static const int falling_edge = 0x6f;
 
 static const auto reference_buffer()
 {
-    const std::string test_filename = "test_data/Co_pos_0000.tpx3";
+    const char *tmp = std::getenv("TPX3_TEST_DATA");
+    BOOST_CHECK(tmp);
+
+    const std::string test_filename = tmp;
+
+    std::cout << "using test file " << test_filename << std::endl;
+    std::cout.flush();
+    BOOST_CHECK(test_filename.size() > 0);
     return timepix::sort::detail::read_raw(test_filename);
 }
 
