@@ -20,9 +20,14 @@ jobs:
 
     steps:
     - name: install required extra packages
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-          packages: libboost-test-dev libboost-program-options-dev libboost-dev patch
+      # currently this action seems to make trouble for me
+      # does not find boost.config when run from the cache
+      # uses: awalsh128/cache-apt-pkgs-action@latest
+      # with:
+      #    packages: libboost-test-dev libboost-program-options-dev libboost-dev patch
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libboost-test-dev libboost-program-options-dev libboost-dev patch
     - name: checkout test data repository
       uses: actions/checkout@v4
       with:
