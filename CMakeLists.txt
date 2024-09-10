@@ -5,6 +5,7 @@ project("timepix-sort-c++" LANGUAGES CXX)
 set(TIMEPIX_SORT_CPP_VERSION 0.1.0)
 
 OPTION (USE_OpenMP "Use OpenMP" ON)
+OPTION (BUILD_TESTS "build tests" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE) # default to release build
@@ -35,6 +36,8 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 add_subdirectory(src)
-set( ../external-repositories/mmap_allocator/)
-add_subdirectory(mmap_allocator_build)
-add_subdirectory(tests)
+if(BUILD_TESTS)
+  set( ../external-repositories/mmap_allocator/)
+  add_subdirectory(mmap_allocator_build)
+  add_subdirectory(tests)
+endif()
