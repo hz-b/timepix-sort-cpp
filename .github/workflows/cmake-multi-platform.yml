@@ -36,9 +36,9 @@ jobs:
         submodules: 'true'
 
     - name: apply patch to mmap allocator
-      # 
-      run: (cd external_repositories/mmap_allocator/ && patch -p1 --dry-run -R < ../../mmap_allocator.patch)
-      
+      #
+      run: (cd external_repositories/mmap_allocator/ && patch -p1 < ../../mmap_allocator.patch)
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
