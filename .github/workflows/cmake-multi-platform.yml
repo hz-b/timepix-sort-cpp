@@ -22,7 +22,7 @@ jobs:
     - name: install required extra packages
       uses: ConorMacBride/install-package@v1
       with:
-          apt: libboost-test-dev
+          apt: libboost-test-dev ibboost-program-options-dev
     - name: checkout test data repository
       uses: actions/checkout@v4
       with:
