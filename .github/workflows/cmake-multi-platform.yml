@@ -72,4 +72,4 @@ jobs:
       run: |
         export TPX3_TEST_DATA=${{ steps.strings.outputs.tpx3-test-data }}
         echo "using test data $TPX3_TEST_DATA"
-        ctest --build-config ${{ matrix.build_type }}
+        ctest --build-config ${{ matrix.build_type }}  --output-on-failure
