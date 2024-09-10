@@ -21,7 +21,7 @@ jobs:
     steps:
     - name: install required extra packages
       uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
+      with:
           packages: libboost-test-dev libboost-program-options-dev patch
     - name: checkout test data repository
       uses: actions/checkout@v4
@@ -35,6 +35,7 @@ jobs:
       submodules: true
       # don't forget to apply the patch to memory allocator
       run: (cd external_repositories/mmap_allocator/ && patch -p1 --dry-run -R < ../../mmap_allocator.patch)
+      
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
