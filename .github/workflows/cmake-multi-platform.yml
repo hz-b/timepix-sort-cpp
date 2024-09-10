@@ -72,4 +72,6 @@ jobs:
       run: |
         export TPX3_TEST_DATA=${{ steps.strings.outputs.tpx3-test-data }}
         echo "using test data $TPX3_TEST_DATA"
+        echo "current directory:" `pwd`
+        find . -name '*.tpx3'
         ctest --build-config ${{ matrix.build_type }}  --output-on-failure
