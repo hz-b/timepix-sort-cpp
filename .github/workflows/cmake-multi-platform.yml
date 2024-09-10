@@ -55,6 +55,8 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         TPX3_TEST_DATA=`pwd`/../timepix-sort-data/data/Co_pos_0000.tpx3
         echo "tpx3-test-data=$TPX3_TEST_DATA" >> "$GITHUB_OUTPUT"
+        find .. -type f
+        find .. -name '*.tpx3'
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -78,5 +80,4 @@ jobs:
         export TPX3_TEST_DATA=${{ steps.strings.outputs.tpx3-test-data }}
         echo "using test data $TPX3_TEST_DATA"
         echo "current directory:" `pwd`
-        find .. -name '*.tpx3'
         ctest --build-config ${{ matrix.build_type }}  --output-on-failure
