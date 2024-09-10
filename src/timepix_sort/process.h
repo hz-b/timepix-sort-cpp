@@ -13,6 +13,14 @@ namespace timepix::sort {
 	const uint64_t minimum_time_over_threshold
 	);
 
+    timepix::data_model::Event process_raw_event(
+	const uint64_t raw_event,
+	const uint8_t chip_nr,
+	const int select_trigger_mode,
+	const uint64_t minimum_time_over_threshold,
+	timepix::data_model::EventStatistics& ev_stat
+	);
+
     std::vector<size_t> sort_indices(const timepix::data_model::EventCollection& col, const uint64_t modulo);
 
     std::vector<timepix::data_model::PixelEvent>

@@ -30,7 +30,12 @@ namespace timepix::data_model {
 	inline void inc_n_event_flagged_two()       { this->m_n_event_flagged_two++;       }
 	inline void reset_n_events()                { this->m_n_events = 0;                }
 
-	inline auto  n_events() const { return this->m_n_events; }
+	inline auto  n_events()                  const { return this->m_n_events                  ; }
+	inline auto  n_pixels()                  const { return this->m_n_pixels                  ; }
+	inline auto  n_timestamps()              const { return this->m_n_timestamps              ; }
+	inline auto  n_timestamps_with_trigger() const { return this->m_n_timestamps_with_trigger ; }
+	inline auto  n_control_indications()     const { return this->m_n_control_indications     ; }
+	inline auto  n_global_time()             const { return this->m_n_global_time             ; }
 
 	void show(std::ostream& strm) const;
     };

@@ -34,8 +34,63 @@ namespace tpxs = timepix::sort;
 namespace tpxd = timepix::sort::detail;
 namespace dm = timepix::data_model;
 
+// a lion again somewhere
+static const auto empty_event = dm::EmptyEvent();
 
 
+dm::Event tpxs::process_raw_event(
+    const uint64_t raw_event,
+    const uint8_t chip_nr,
+    const int select_trigger_mode,
+    const uint64_t minimum_time_over_threshold,
+    dm::EventStatistics& ev_stat
+    )
+{
+    int event_type = (raw_event >> 60);
+    int trigger_mode = raw_event >> 56;
+    ev_stat.inc_n_events();
+    switch(event_type){
+    case timestamp:
+	ev_stat.inc_n_timestamps();
+	if (select_trigger_mode == trigger_mode) {
+	    ev_stat.inc_n_timestamps_with_trigger();
+	    return tpxd::tdc_time_stamp(raw_event);
+	} else  {
+	    return dm::EmptyEvent();
+	}
+	break;
+    case pixel:
+    {
+	// Why do I need this brackets ?
+	ev_stat.inc_n_pixels();
+	auto pix_ev = tpxd::unfold_pixel_event(raw_event,  chip_nr);
+	if (pix_ev.time_over_threshold() >= minimum_time_over_threshold) {
+	    return pix_ev;
+	} else {
+	    return dm::EmptyEvent();
+	}
+    }
+	break;
+    case global_time:
+	ev_stat.inc_n_global_time();
+	return  dm::EmptyEvent();
+	break;
+    case control_indication:
+	ev_stat.inc_n_control_indications();
+	return  dm::EmptyEvent();
+	break;
+	/*
+    case 0xf:
+	return empty_event;
+	break;
+	*/
+    default:
+	std::stringstream strm;
+	strm << "Found unknown event data type " << std::hex << event_type
+	     << " in data";
+	throw std::invalid_argument(strm.str());
+    }
+}
 
 std::pair<std::vector<timepix::data_model::Event>,dm::EventStatistics>
 tpxs::process(
@@ -72,40 +127,15 @@ tpxs::process(
 	}
 #endif
 
-	for(const uint64_t ev : raw_events){
-	    int event_type = (ev >> 60);
-	    int trigger_mode = ev >> 56;
-	    ev_stat.inc_n_events();
-	    switch(event_type){
-	    case timestamp:
-		ev_stat.inc_n_timestamps();
-		if (select_trigger_mode == trigger_mode) {
-		    events.push_back(std::move(tpxd::tdc_time_stamp(ev)));
-		    ev_stat.inc_n_timestamps_with_trigger();
-		}
-		break;
-	    case pixel:
-	    { // Why do I need this brackets ?
-		ev_stat.inc_n_pixels();
-		const auto pix_ev = tpxd::unfold_pixel_event(ev,  view.chip_nr());
-		if (pix_ev.time_over_threshold() >= minimum_time_over_threshold) {
-		    events.push_back(Event(std::move(pix_ev)));
-		}
-	    } //
-	    break;
-	    case global_time:
-		ev_stat.inc_n_global_time();
-		break;
-	    case control_indication:
-		ev_stat.inc_n_control_indications();
-		break;
-	    case 0xf:
-		break;
-	    default:
-		std::stringstream strm;
-		strm << "Found unknown event data type " << std::hex << event_type
-		     << " in data";
-		throw std::invalid_argument(strm.str());
+	for(const uint64_t raw_event : raw_events){
+	    auto event = tpxs::process_raw_event(
+		raw_event,
+		view.chip_nr(),
+		select_trigger_mode,
+		minimum_time_over_threshold,
+		ev_stat);
+	    if(!event.is_empty_event()){
+		events.push_back(Event(std::move(event)));
 	    }
 	}
     }

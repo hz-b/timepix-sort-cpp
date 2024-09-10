@@ -110,12 +110,15 @@ int main(int argc, char *argv[])
 	);
     pixel_diff_time.sort();
 
-    std::cerr << "trigger time range: "
+    auto pixel_diff_timestamps = pixel_diff_time
+	| std::views::transform([](const auto &ev){ return ev.time_of_arrival();});
+
+    std::cerr << "Pixel diff time range "
 	      << std::setprecision(15)
-	      << *std::ranges::min_element(trigger_timestamps.begin(), trigger_timestamps.end())  * 1e-15
+	      << *std::ranges::min_element(pixel_diff_timestamps.begin(), pixel_diff_timestamps.end())  * 1e-15
 	      << " .. "
 	      << std::setprecision(15)
-	      << *std::ranges::max_element(trigger_timestamps.begin(), trigger_timestamps.end())  * 1e-15
+	      << *std::ranges::max_element(pixel_diff_timestamps.begin(), pixel_diff_timestamps.end())  * 1e-15
 	      << std::endl ;
 
     std::cerr << "sorting "

@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <stdint.h>
+#include <limits>
 #include <vector>
 #include <variant>
 
@@ -118,8 +119,18 @@ namespace timepix::data_model {
 	template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
     }
 
+    // a place holder to signal that a event was recoginsed.
+    // It's content was not processed any further
+    struct EmptyEvent{
+	inline constexpr const auto time_of_arrival() const {
+	    return std::numeric_limits<uint64_t>::max();
+	}
+	void show(std::ostream& o) const {
+	    o << "EmptyEvent()";
+	}
+    };
 
-    typedef struct std::variant<TimeOfFlightEvent,PixelEvent> a_event;
+    typedef struct std::variant<TimeOfFlightEvent,PixelEvent,EmptyEvent> a_event;
 
 
     class Event
@@ -137,6 +148,10 @@ namespace timepix::data_model {
 	    {}
 
 	inline Event(PixelEvent&& event)
+	    : m_event(std::move(event))
+	    {}
+
+	inline Event(EmptyEvent&& event)
 	    : m_event(std::move(event))
 	    {}
 
@@ -187,6 +202,9 @@ namespace timepix::data_model {
 
 	inline bool is_pixel_event() const {
 	    return std::holds_alternative<PixelEvent>(this->m_event);
+	}
+	inline bool is_empty_event() const {
+	    return std::holds_alternative<EmptyEvent>(this->m_event);
 	}
 
 	/**
