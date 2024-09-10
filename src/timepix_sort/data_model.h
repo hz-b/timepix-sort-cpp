@@ -258,4 +258,4 @@ namespace timepix::data_model {
 
 };
 
-#endif
+#endif /* TIMEPIX_DATA_MODEL_H */

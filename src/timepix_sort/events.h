@@ -81,6 +81,25 @@ namespace timepix::sort {
 	)
     {
 	using timepix::data_model::PixelPos;
+äif 0
+	switch (chip_nr){
+	case 0:
+	    return std::move(PixelPos(255 - pos.x(), 255 - pos.y() + 258));
+	    break;
+	case 1:
+	    return std::move(pos);
+	    break;
+	case 2:
+	    return std::move(PixelPos(258 + pos.x(), pos.y()));
+	    break;
+	case 3:
+	    return std::move(PixelPos(255  - pos.x() + 258, 255 - pos.y() + 258));
+	    break;
+	default:
+	    throw std::range_error("chip nr out of range!");
+	}
+#endif
+
 	switch (chip_nr){
 	case 0:
 	    return std::move(PixelPos(255 - pos.x(), 255 - pos.y() + 258));
