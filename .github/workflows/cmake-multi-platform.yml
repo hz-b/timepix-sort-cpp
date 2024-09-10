@@ -22,7 +22,7 @@ jobs:
     - name: install required extra packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-          packages: libboost-test-dev libboost-program-options-dev patch
+          packages: libboost-test-dev libboost-program-options-dev libboost-dev patch
     - name: checkout test data repository
       uses: actions/checkout@v4
       with:
