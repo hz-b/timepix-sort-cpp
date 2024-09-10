@@ -59,10 +59,10 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         echo "current directory:" `pwd`
 
-        TPX3_TEST_DATA=`pwd`/../../timepix-sort-data/data/Co_pos_0000.tpx3
+        TPX3_TEST_DATA=`pwd`/timepix-sort-data/data/Co_pos_0000.tpx3
         echo "tpx3-test-data=$TPX3_TEST_DATA" >> "$GITHUB_OUTPUT"
-        find ../.. -type f
-        find ../.. -name '*.tpx3'
+        find . -name '*.tpx3'
+        ls -l "$TPX3_TEST_DATA"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
