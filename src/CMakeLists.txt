@@ -16,8 +16,16 @@ set(timepix_sort_cpp_detail_HEADERS
   timepix_sort/detail/process_chunks.h
   )
 
+set(timepix_sort_cpp_hardware_HEADERS
+  timepix_sort/hardware/tpx3.h
+  )
+
 install(FILES ${timepix_sort_cpp_detail_HEADERS}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timepix_sort/detail/
+  )
+
+install(FILES ${timepix_sort_cpp_hardware_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timepix_sort/hardware/
   )
 
 install(FILES ${timepix_sort_cpp_HEADERS}

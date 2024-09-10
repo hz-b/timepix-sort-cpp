@@ -2,29 +2,35 @@
 #define TIMEPIX_DETAIL_PROCESS_CHUNKS_H
 
 #include <timepix_sort/data_model.h>
+#include <timepix_sort/hardware/tpx3.h>
 
 namespace timepix::sort::detail {
+
 
     /* todo: calculate all in fs */
     const uint64_t nanoseconds2femtoseconds = uint64_t(1000* 1000);
     const uint64_t seconds2nanoseconds = uint64_t(1000 * 1000 * 1000);
-    const uint64_t seconds2femtoseconds =  nanoseconds2femtoseconds * uint64_t(1000 * 1000 * 1000);
+    const uint64_t seconds2femtoseconds =  nanoseconds2femtoseconds * seconds2nanoseconds;
     const double time_unit = 25. / 4096;
 
-    const double pixel_max_time = 26.8435456;
-    const double tdc_max_time = 107.3741824;
 
-    static inline auto convert_time(const double time_stamp, const double max_time, const double eps = 1e-9)
+    /**
+     *
+     * assuming time arrives in correct type: expecting femto seconds
+     *
+     * warning: currently not assuming that we are
+     */
+    static inline auto convert_time(const uint64_t time_stamp, const uint64_t max_time, const double eps = 1)
     {
 	if(time_stamp < eps){
 	    throw std::range_error("timestamp too small!");
 	}
-
 	if(time_stamp > max_time + eps){
 	    throw std::range_error("timestamp larger than max_time");
 	}
 	return time_stamp;
     }
+
     /* time stamp in fs */
     static inline auto tdc_time_stamp(const uint64_t datum)
     {
@@ -36,7 +42,12 @@ namespace timepix::sort::detail {
 	double TDC_timestamp = coarsetime * 25.0 + trigtime_fine * time_unit*1.0;
 
 	using timepix::data_model::TimeOfFlightEvent;
-	return TimeOfFlightEvent(convert_time(TDC_timestamp, tdc_max_time * 1e9));
+	return TimeOfFlightEvent(
+	    convert_time(
+		TDC_timestamp * nanoseconds2femtoseconds,
+		timepix::hardware::tpx3::tdc_max_time_fs
+		)
+	    );
     }
 
     static inline auto unfold_pixel_event(const uint64_t datum, const int8_t chip_nr){
@@ -59,7 +70,9 @@ namespace timepix::sort::detail {
 
 	return timepix::data_model::PixelEvent(
 	    timepix::data_model::PixelPos(x, y),
-	    convert_time(global_timestamp, pixel_max_time * 1e9),
+	    convert_time(
+		global_timestamp * nanoseconds2femtoseconds,
+		timepix::hardware::tpx3::pixel_max_time_fs),
 	    TOT,
 	    chip_nr
 	    );

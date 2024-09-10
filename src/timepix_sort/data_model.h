@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <stdint.h>
+#include <limits>
 #include <vector>
 #include <variant>
 
@@ -48,12 +49,11 @@ namespace timepix::data_model {
      */
     class TimeOfFlightEvent : public HasTimeOfArrival<TimeOfFlightEvent>{
     private:
-	// const uint64_t m_time_of_arrival;
-	// double m_time_of_arrival;
+	const uint64_t m_time_of_arrival;
 
     public:
 
-	TimeOfFlightEvent(const double time_of_arrival)
+	TimeOfFlightEvent(const uint64_t time_of_arrival)
 	    : m_time_of_arrival(time_of_arrival)
 	    {}
 
@@ -76,13 +76,13 @@ namespace timepix::data_model {
     class PixelEvent : public HasTimeOfArrival<PixelEvent>{
     private:
 	// uint64_t m_time_of_arrival;
-	double m_time_of_arrival;
+	uint64_t m_time_of_arrival;
 	uint64_t m_time_over_threshold;
 	PixelPos m_pos;
 	int8_t m_chip_nr;
 
     public:
-	inline PixelEvent(const PixelPos& pos, const double time_of_arrival, const int64_t time_over_threshold, int8_t chip_nr)
+	inline PixelEvent(const PixelPos& pos, const uint64_t time_of_arrival, const int64_t time_over_threshold, int8_t chip_nr)
 	    : m_time_of_arrival(time_of_arrival)
 	    , m_time_over_threshold(time_over_threshold)
 	    , m_pos(pos)
@@ -119,8 +119,18 @@ namespace timepix::data_model {
 	template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
     }
 
+    // a place holder to signal that a event was recoginsed.
+    // It's content was not processed any further
+    struct EmptyEvent{
+	inline constexpr const auto time_of_arrival() const {
+	    return std::numeric_limits<uint64_t>::max();
+	}
+	void show(std::ostream& o) const {
+	    o << "EmptyEvent()";
+	}
+    };
 
-    typedef struct std::variant<TimeOfFlightEvent,PixelEvent> a_event;
+    typedef struct std::variant<TimeOfFlightEvent,PixelEvent,EmptyEvent> a_event;
 
 
     class Event
@@ -138,6 +148,10 @@ namespace timepix::data_model {
 	    {}
 
 	inline Event(PixelEvent&& event)
+	    : m_event(std::move(event))
+	    {}
+
+	inline Event(EmptyEvent&& event)
 	    : m_event(std::move(event))
 	    {}
 
@@ -162,7 +176,7 @@ namespace timepix::data_model {
 	}
 
 	inline auto time_of_arrival () const {
-	    double t;
+	    uint64_t t;
 	    std::visit(overloaded{
 		    [&t] (const PixelEvent& ev){
 			t = ev.time_of_arrival();
@@ -188,6 +202,9 @@ namespace timepix::data_model {
 
 	inline bool is_pixel_event() const {
 	    return std::holds_alternative<PixelEvent>(this->m_event);
+	}
+	inline bool is_empty_event() const {
+	    return std::holds_alternative<EmptyEvent>(this->m_event);
 	}
 
 	/**
@@ -241,4 +258,4 @@ namespace timepix::data_model {
 
 };
 
-#endif
+#endif /* TIMEPIX_DATA_MODEL_H */

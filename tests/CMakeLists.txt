@@ -1,3 +1,10 @@
+find_package(Boost 1.52.0 REQUIRED COMPONENTS
+  prg_exec_monitor
+  unit_test_framework
+  program_options
+  )
+
+
 set(timepix_sort_test_cpp_FILES
   read_raw.cpp
   )
@@ -38,6 +45,16 @@ install(
 
 add_executable(main main.cpp)
 target_link_libraries(main timepix-sort-test-c++ timepix-sort-c++ mmap_allocator)
+
+add_executable(test_read_data test_read_data.cpp)
+target_link_libraries(
+  test_read_data
+  timepix-sort-test-c++
+  timepix-sort-c++ mmap_allocator
+  ${Boost_PRG_EXEC_MONITOR_LIBRARY}
+  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+  )
+add_test(read_data test_read_data)
 
 add_executable(sort_test sort_test.cpp)
 target_link_libraries(sort_test timepix-sort-c++)

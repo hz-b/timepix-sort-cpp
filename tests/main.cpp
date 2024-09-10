@@ -11,6 +11,7 @@
 #include <timepix_sort/process.h>
 #include <timepix_sort/utils.h>
 #include <timepix_sort/events.h>
+#include <timepix_sort/hardware/tpx3.h>
 
 namespace dm = timepix::data_model;
 namespace tps = timepix::sort;
@@ -55,12 +56,6 @@ int main(int argc, char *argv[])
     const auto timestamp_process{now()};
     std::cout << "Got " << col.size() << " timestamps\n";
 
-    const auto timestamp_extract_start{now()};
-    std::vector<double> timestamps(col.size());
-    std::transform(
-	col.begin(), col.end(), timestamps.begin(),
-	[](const auto &ev){ return ev.time_of_arrival(); }
-	);
 
     auto pixel_timestamps = col |					\
 	std::views::filter([](const dm::Event &ev){ return ev.is_pixel_event();}) |
@@ -73,23 +68,29 @@ int main(int argc, char *argv[])
 
     std::cerr << "pixels time range: "
 	      << std::setprecision(15)
-	      << *std::ranges::min_element(pixel_timestamps.begin(), pixel_timestamps.end())
+	      << *std::ranges::min_element(pixel_timestamps.begin(), pixel_timestamps.end()) * 1e-15
 	      << " .. "
 	      << std::setprecision(15)
-	      << *std::ranges::max_element(pixel_timestamps.begin(), pixel_timestamps.end())
+	      << *std::ranges::max_element(pixel_timestamps.begin(), pixel_timestamps.end())  * 1e-15
 	      << std::endl ;
 
     std::cerr << "trigger time range: "
 	      << std::setprecision(15)
-	      << *std::ranges::min_element(trigger_timestamps.begin(), trigger_timestamps.end())
+	      << *std::ranges::min_element(trigger_timestamps.begin(), trigger_timestamps.end())  * 1e-15
 	      << " .. "
 	      << std::setprecision(15)
-	      << *std::ranges::max_element(trigger_timestamps.begin(), trigger_timestamps.end())
+	      << *std::ranges::max_element(trigger_timestamps.begin(), trigger_timestamps.end())  * 1e-15
 	      << std::endl ;
 
     // indices to the events in sorted manner
+    const auto timestamp_extract_start{now()};
+    std::vector<double> timestamps(col.size());
+    std::transform(
+	col.begin(), col.end(), timestamps.begin(),
+	[](const auto &ev){ return ev.time_of_arrival(); }
+	);
     const auto timestamp_sort_start{now()};
-    const auto indices = timepix::sort::detail::sort_indices(timestamps);
+    const auto indices = timepix::sort::sort_indices(col, timepix::hardware::tpx3::pixel_max_time_fs);
     const auto timestamp_sort_end{now()};
 
     std::cerr << "timestamps size " << timestamps.size()
@@ -105,9 +106,21 @@ int main(int argc, char *argv[])
 
     const auto timestamp_diff_calc_end{now()};
     auto pixel_diff_time = tps::PixelEventsDiffTime(
-	std::move(tps::calculate_diff_time(col, indices))
+	std::move(tps::calculate_diff_time(col, indices, timepix::hardware::tpx3::pixel_max_time_fs))
 	);
     pixel_diff_time.sort();
+
+    auto pixel_diff_timestamps = pixel_diff_time
+	| std::views::transform([](const auto &ev){ return ev.time_of_arrival();});
+
+    std::cerr << "Pixel diff time range "
+	      << std::setprecision(15)
+	      << *std::ranges::min_element(pixel_diff_timestamps.begin(), pixel_diff_timestamps.end())  * 1e-15
+	      << " .. "
+	      << std::setprecision(15)
+	      << *std::ranges::max_element(pixel_diff_timestamps.begin(), pixel_diff_timestamps.end())  * 1e-15
+	      << std::endl ;
+
     std::cerr << "sorting "
 	      << pixel_diff_time.size()
 	      << " pixel events by their diff time\n";
