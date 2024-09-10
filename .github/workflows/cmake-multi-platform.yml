@@ -53,7 +53,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        TPX3_TEST_DATA=(cd .. && echo `pwd`/timepix-sort-data/data/Co_pos_0000.tpx3)
+        TPX3_TEST_DATA=`pwd`/../timepix-sort-data/data/Co_pos_0000.tpx3
         echo "tpx3-test-data=$TPX3_TEST_DATA" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
